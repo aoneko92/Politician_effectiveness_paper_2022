@@ -2,8 +2,9 @@
 library(dplyr)
 library(ggplot2)
 library(scales)
+library(cowplot)
 
-
+length(unique(p2_filter$pref_id))
 
 ## plot 1 - Number of uncontested elections across years
 {
@@ -112,25 +113,155 @@ ggplot(plot_3, aes(obs_2, sum)) + geom_col(aes(fill = median)) + scale_fill_manu
 
 
 ### Plot 4 - Effect of uncontested on n remarks
-ggplot(p2_filter, aes(factor(un_full_2), obs_2)) + geom_boxplot(outlier.shape = NA) + geom_jitter(width = 0.2) + 
-  scale_x_discrete(name = "# times reelected") +
-  scale_y_continuous(name = "N remarks / year *logarithmic axis", trans = log_trans(),breaks = c(1, 5, 25, 125, 625)) + 
-  ggtitle("Plot 4: Number of remarks by consecutive times uncontested") + 
-  stat_summary(fun.y=mean, geom="point", shape=20, size=4, color="red", fill="red") + xlab("") +
-  scale_x_discrete(labels= c("Contested", "Uncontested (1 term)", "Uncontested (2 term)", "Uncontested (3 term+)")) + labs(caption = "
-       
-       Each dot represents the number of times one legislator had made remarks during a four-year period. 
-                                                                                                                           Red dot signifies the mean in each group")
+##generate analysis df for tab 2 before running scripts ("")
 
-### Plot 5 - Effect of uncontested on n remarks
-ggplot(p2_filter_smd, aes(factor(un_full_2), obs)) + geom_boxplot(outlier.shape = NA) + geom_jitter(width = 0.2) + 
+{
+plot <- p2_filter %>% group_by(mutohyo) %>% summarise(n = n(),mean = mean(obs_2), sd = sd(obs_2)) %>%
+  mutate( se=sd/sqrt(n))  %>%
+  mutate( ic=se * qt((1-0.05)/2 + .5, n-1))
+
+p1 <- ggplot(plot) +
+  geom_bar( aes(x=factor(mutohyo), y=mean), stat="identity", fill="forestgreen", alpha=0.5) +
+  geom_errorbar( aes(x=factor(mutohyo), ymin=mean-ic, ymax=mean+ic), width=0.4, colour="orange", alpha=0.9, size=1.5) +
+  ggtitle("")+ 
+  scale_x_discrete(labels= c("Contested", "Uncontested")) + xlab("")
+
+p2 <- ggplot(p2_filter, aes(factor(mutohyo), obs_2)) + geom_boxplot(outlier.shape = NA) + geom_jitter(width = 0.2) + 
   scale_x_discrete(name = "# times reelected") +
-  scale_y_continuous(name = "N remarks / year *logarithmic axis", trans = log_trans(),breaks = c(1, 5, 25, 125, 625)) + 
-  ggtitle("Plot 4: Number of remarks by consecutive times uncontested") + 
+  scale_y_continuous(name = "N remarks", trans = log_trans(),breaks = c(1, 5, 25, 125, 625)) + 
+  ggtitle("") + 
   stat_summary(fun.y=mean, geom="point", shape=20, size=4, color="red", fill="red") + xlab("") +
-  scale_x_discrete(labels= c("Contested", "Uncontested (1 term)", "Uncontested (2 term)", "Uncontested (3 term+)")) + labs(caption = "
-       
-       Each dot represents the number of times one legislator had made remarks during a four-year period. 
-                                                                                                                           Red dot signifies the mean in each group")
+  scale_x_discrete(labels= c("Contested", "Uncontested")) + labs(caption = "")
+
+plot <- p2_filter %>% group_by(un_full_2) %>% summarise(n = n(),mean = mean(obs_2), sd = sd(obs_2)) %>%
+  mutate( se=sd/sqrt(n))  %>%
+  mutate( ic=se * qt((1-0.05)/2 + .5, n-1))
+
+p3 <- ggplot(plot) +
+  geom_bar( aes(x=un_full_2, y=mean), stat="identity", fill="forestgreen", alpha=0.5) +
+  geom_errorbar( aes(x=un_full_2, ymin=mean-ic, ymax=mean+ic), width=0.4, colour="orange", alpha=0.9, size=1.5) +
+  ggtitle("")+
+  scale_x_discrete(labels= c("Cont.", "Uncont. (1)", "Uncont. (2)", "Uncont. (3+)"))+ xlab("")
+
+p4 <- ggplot(p2_filter, aes(factor(un_full_2), obs_2)) + geom_boxplot(outlier.shape = NA) + geom_jitter(width = 0.2) + 
+  scale_x_discrete(name = "# times reelected") +
+  scale_y_continuous(name = "N remarks", trans = log_trans(),breaks = c(1, 5, 25, 125, 625)) + 
+  ggtitle("") + 
+  stat_summary(fun.y=mean, geom="point", shape=20, size=4, color="red", fill="red") + xlab("") +
+  scale_x_discrete(labels= c("Cont.", "Uncont. (1)", "Uncont. (2)", "Uncont. (3+)")) + labs(caption = "")
+
+plot <- p2_filter %>% group_by(party) %>% summarise(n = n(),mean = mean(obs_2), sd = sd(obs_2)) %>%
+  mutate( se=sd/sqrt(n))  %>%
+  mutate( ic=se * qt((1-0.05)/2 + .5, n-1))
+
+p5 <- ggplot(plot) +
+  geom_bar( aes(x=party, y=mean), stat="identity", fill="forestgreen", alpha=0.5) +
+  geom_errorbar( aes(x=party, ymin=mean-ic, ymax=mean+ic), width=0.4, colour="orange", alpha=0.9, size=1.5) +
+  ggtitle("")+
+  scale_x_discrete(labels = c("LDP", "Ishin", "JCP", "KMT", "SDP", "Other", "DPJ", "Unaf"))+ xlab("")
+
+p6 <- ggplot(p2_filter, aes(factor(party), obs_2)) + geom_boxplot(outlier.shape = NA) + geom_jitter(width = 0.2) + 
+  scale_x_discrete(name = "# times reelected") +
+  scale_y_continuous(name = "N remarks", trans = log_trans(),breaks = c(1, 5, 25, 125, 625)) + 
+  ggtitle("") + 
+  stat_summary(fun.y=mean, geom="point", shape=20, size=4, color="red", fill="red") + xlab("") +
+  scale_x_discrete(labels = c("LDP", "Ishin", "JCP", "KMT", "SDP", "Other", "DPJ", "Unaf")) + labs(caption = "")
+
+lab <- c("A - Uncontested","","B - Uncontested (# terms)","","C - Party","")
+
+p_ <- plot_grid(p1, p2, p3, p4, p5, p6, ncol = 2, 
+          labels =lab)
+lab <- c("A - Uncontested","B - Uncontested","C - Uncontested","D - Uncontested","E - Party","F - Party")
+title <- ggdraw() + 
+  draw_label(
+    "Plot 4: Effect of main independent variables on legislator performance",
+    fontface = 'bold',
+    x = 0,
+    hjust = 0
+  ) +
+  theme(
+    # add margin on the left of the drawing canvas,
+    # so title is aligned with left edge of first plot
+    plot.margin = margin(0, 0, 0, 7)
+  )
+
+}
+plot_grid(title, p_, ncol = 1,
+          rel_heights = c(0.1,1)) 
+
+### Plot 5 - Effect depending on district characteristics
+p2_filter <- p2_filter %>% mutate(mag = case_when(totseat %in% c(1) ~ 1,
+                                     totseat %in% c(2) ~ 2,
+                                     totseat %in% c(3) ~ 3,
+                                     totseat %in% c(4,5,6,7,8,9,10,11,12,13,14,15,16,17,18) ~ 4))
+
+
+p2_filter <- p2_filter[!is.na(p2_filter$mag),]
+
+{
+  plot <- p2_filter %>% group_by(mag) %>% summarise(n = n(),mean = mean(obs_2), sd = sd(obs_2)) %>%
+    mutate( se=sd/sqrt(n))  %>%
+    mutate( ic=se * qt((1-0.05)/2 + .5, n-1))
+  
+  p1 <- ggplot(plot) +
+    geom_bar( aes(x=factor(mag), y=mean), stat="identity", fill="forestgreen", alpha=0.5) +
+    geom_errorbar( aes(x=factor(mag), ymin=mean-ic, ymax=mean+ic), width=0.4, colour="orange", alpha=0.9, size=1.5) +
+    ggtitle("")+ 
+    scale_x_discrete(labels= c("SMD", "2 seat MMD", "3 seat MMD", "4+ seat MMD")) + xlab("")
+  
+  p2 <- ggplot(p2_filter, aes(factor(mag), obs_2)) + geom_boxplot(outlier.shape = NA) + geom_jitter(width = 0.2) + 
+    scale_x_discrete(name = "# times reelected") +
+    scale_y_continuous(name = "N remarks", trans = log_trans(),breaks = c(1, 5, 25, 125, 625)) + 
+    ggtitle("") + 
+    stat_summary(fun.y=mean, geom="point", shape=20, size=4, color="red", fill="red") + xlab("") +
+    scale_x_discrete(labels= c("SMD", "2 seat MMD", "3 seat MMD", "4+ seat MMD")) + labs(caption = "")
+  
+  p2_filter <- p2_filter %>% mutate(mag_2 = case_when(meansize_10k < 3 ~ 1,
+                                                    meansize_10k >= 3 & meansize_10k < 20 ~ 2,
+                                                    meansize_10k > 20 ~ 3))
+  
+  p2_filter <- p2_filter[!is.na(p2_filter$mag_2),]
+  
+  
+  plot <- p2_filter %>% group_by(mag_2) %>% summarise(n = n(),mean = mean(obs_2), sd = sd(obs_2)) %>%
+    mutate( se=sd/sqrt(n))  %>%
+    mutate( ic=se * qt((1-0.05)/2 + .5, n-1))
+  
+  p3 <- ggplot(plot) +
+    geom_bar( aes(x=factor(mag_2), y=mean), stat="identity", fill="forestgreen", alpha=0.5) +
+    geom_errorbar( aes(x=factor(mag_2), ymin=mean-ic, ymax=mean+ic), width=0.4, colour="orange", alpha=0.9, size=1.5) +
+    ggtitle("")+ scale_x_discrete(labels= c("Rural", "Suburban", "Urban")) + xlab("")
+  
+  p4 <- ggplot(p2_filter, aes(factor(mag_2), obs_2)) + geom_boxplot(outlier.shape = NA) + geom_jitter(width = 0.2) + 
+    scale_x_discrete(name = "# times reelected") +
+    scale_y_continuous(name = "N remarks", trans = log_trans(),breaks = c(1, 5, 25, 125, 625)) + 
+    ggtitle("") + 
+    stat_summary(fun.y=mean, geom="point", shape=20, size=4, color="red", fill="red") + xlab("") +
+    scale_x_discrete(labels= c("Rural", "Suburban", "Urban")) + labs(caption = "")
+  
+
+  
+  
+  p_2 <- plot_grid(p1, p2, p3, p4, ncol = 2, 
+                  labels =c("District magnitude", "", "Degree of urbanity", ""))
+  
+  lab <- c("A - Uncontested","","B - Uncontested (# terms)","","C - Party","")
+  title <- ggdraw() + 
+    draw_label(
+      "Supplementary plot 1: Legislator performance by district characteristics",
+      fontface = 'bold',
+      x = 0,
+      hjust = 0
+    ) +
+    theme(
+      # add margin on the left of the drawing canvas,
+      # so title is aligned with left edge of first plot
+      plot.margin = margin(0, 0, 0, 7)
+    )
+  
+}
+plot_grid(title, p_2, ncol = 1,
+          rel_heights = c(0.1,1)) 
+
 
               
